@@ -60,29 +60,31 @@ export const connect = () => {
         const networkId = await ethereum.request({
           method: "net_version",
         });
-        if (networkId == CONFIG.NETWORK.ID) {
-          const SmartContractObj = new Web3EthContract(
-            abi,
-            CONFIG.CONTRACT_ADDRESS
-          );
-          dispatch(
-            connectSuccess({
-              account: accounts[0],
-              smartContract: SmartContractObj,
-              web3: web3,
-            })
-          );
-          // Add listeners start
-          ethereum.on("accountsChanged", (accounts) => {
-            dispatch(updateAccount(accounts[0]));
+        if (networkId != CONFIG.NETWORK.ID) {
+          await ethereum.request({
+            method: 'wallet_switchEthereumChain',
+            params: [{ chainId: Web3.utils.toHex(CONFIG.NETWORK.ID) }],
           });
-          ethereum.on("chainChanged", () => {
-            window.location.reload();
-          });
-          // Add listeners end
-        } else {
-          dispatch(connectFailed(`Change network to ${CONFIG.NETWORK.NAME}.`));
         }
+        const SmartContractObj = new Web3EthContract(
+          abi,
+          CONFIG.CONTRACT_ADDRESS
+        );
+        dispatch(
+          connectSuccess({
+            account: accounts[0],
+            smartContract: SmartContractObj,
+            web3: web3,
+          })
+        );
+        // Add listeners start
+        ethereum.on("accountsChanged", (accounts) => {
+          dispatch(updateAccount(accounts[0]));
+        });
+        ethereum.on("chainChanged", () => {
+          window.location.reload();
+        });
+        // Add listeners end
       } catch (err) {
         dispatch(connectFailed("Something went wrong."));
       }
